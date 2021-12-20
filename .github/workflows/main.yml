@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  workflow_dispatch:
+
+jobs:
+  get_tags:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: ip
+        run: curl ifconfig.me
+      - name: prepare
+        run: pip install requests beautifulsoup4
+      - id: set-matrix
+        run: |
+          tags=$(python tag.py | grep -E '(\[|\])')
+          echo $tags
+          echo ::set-output name=matrix::$tags
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+  get_books:
+    needs: get_tags
+    runs-on: ubuntu-latest
+    strategy:
+        matrix:
+            tag: ${{ fromJson(needs.get_tags.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: ip
+        run: curl ifconfig.me
+      - name: prepare
+        run: pip install requests beautifulsoup4
+      - name: run
+        run: python book.py ${{ matrix.tag }}

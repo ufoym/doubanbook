@@ -67,16 +67,11 @@ def sync(action, branch = 'main', msg = 'Auto-commit', firstTime=[True]):
     scriptMerge = '''
         git checkout main
         git pull --rebase origin main
-
-        git checkout %s
-        git merge -X theirs main
-        git push origin %s
-
-        git checkout main
         git merge -X ours %s
         git pull --rebase origin main
+        git merge -X ours %s
         git push origin main
-    ''' % (branch, branch, branch)
+    ''' % (branch, branch)
     scriptClear = '''
         git branch -D %s
         git push origin --delete %s

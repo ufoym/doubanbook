@@ -1,5 +1,7 @@
 import os
 import sys
+import time
+import random
 import argparse
 from bs4 import BeautifulSoup
 from common import request, load, save, sync
@@ -14,7 +16,7 @@ class BookPool:
         self.maxlen = maxlen
         self.tagURL = '%s/%s?start=' % (baseURL, tag)
 
-    def crawl(self, step, resultPath, mergeMaxRetries=3):
+    def crawl(self, step, resultPath, mergeMaxDelay=30, mergeMaxRetries=5):
         '''
         Steps:
         1. clear  (necessary due to possible previous failure)
@@ -25,9 +27,8 @@ class BookPool:
            (3) add, commit: content -> local branch
            (4) push: local branch -> remote branch
         3. merge to main
-           (1) pull: remote main -> local main
-           (2) merge: local main -> branch
-           (2) merge: branch -> local main
+           (1) merge: branch -> local (latest) main  (probably takes a while)
+           (2) merge: branch -> local (latest) main  (for case: main updated during 3.1)
            (3) push: local main -> remote main
         4. clear
            (1) clear remote branch
@@ -58,9 +59,11 @@ class BookPool:
         if hit > 0:
             save(list(visited), flagPath)
             sync('push', branch, 'Auto-commit: ' + self.tag)
-            for i in range(mergeMaxRetries):
+            for _ in range(mergeMaxRetries):
                 if (sync('merge', branch)):
                     break
+                else:
+                    time.sleep(random.random() * mergeMaxDelay)
             else:
                 raise Exception('Reached the maximum attempts without success.')
             sync('clear', branch)
